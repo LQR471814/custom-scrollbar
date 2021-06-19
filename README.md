@@ -44,9 +44,12 @@ You can also style the scrollbar.
 ```html
 <Scrollbar
     styling={{
-        nubHovered: "#000000",
-        nub: "#C1C1C1",
-        background: "FFF",
+        width: "5px",
+        padding: "1px"
+    }}
+
+    colorScheme={{
+        nubHovered: "#000000"
     }}
 
     containerStyle="

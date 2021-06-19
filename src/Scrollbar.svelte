@@ -1,4 +1,4 @@
-<svelte:options tag="js-table-scrollbar" />
+<svelte:options tag="custom-scrollbar" />
 
 <script>
 	import { createEventDispatcher, onMount } from "svelte";
