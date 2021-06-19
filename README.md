@@ -1,57 +1,58 @@
-*Psst — looking for an app template? Go here --> [sveltejs/template](https://github.com/sveltejs/template)*
+## Custom Scrollbar
 
----
+A custom scrollbar Svelte component.
 
-# svelt-component-library-template
+### Usage
 
-A base for building shareable Svelte component library. Clone it with [degit](https://github.com/Rich-Harris/degit):
+This example allows you to control the scrollbar with arrows keys and record / update the position of the scrollbar
 
-```bash
-npx degit nirmaoz/svelte-component-library-template my-new-component
-cd my-new-component
-npm install # or yarn
+```html
+<script lang="ts">
+	import Scrollbar from "./Scrollbar.svelte";
+
+	let scrolled = 0 //? Record & update scrollbar position
+
+	//? Control scrollbar with arrow keys
+	window.addEventListener('keydown', (e) => {
+		switch (e.code) {
+			case "ArrowDown":
+				scrolled += 10
+				break
+			case "ArrowUp":
+				scrolled -= 10
+				break
+		}
+	})
+</script>
+
+<main>
+	<Scrollbar
+		position={scrolled}
+		viewable={50}
+		total={1000}
+		on:scroll={
+			(e) => {
+				scrolled = e.detail.position * 1000
+			}
+		}
+	/>
+</main>
 ```
 
-Your component's source code lives in `src/Component.svelte`.
+You can also style the scrollbar.
 
-You can create a package that exports multiple components by adding them to the `src` directory and editing `src/index.js` to reexport them as named exports.
+```html
+<Scrollbar
+	styling={{
+		nubHovered: "#000000",
+		nub: "#C1C1C1",
+		background: "FFF",
+	}}
 
-## This template includes:
+	containerStyle="
+		/* Pass CSS rules straight to
+			the container or the nub */
 
-* Svelte Component
-* Testing using svelte-testing-library + Jest
-* Storybook
-* Rollup, configured to build .js (umd), .min.js (iife), .mjs (es)
-
-## Setting up
-
-* Run `npm init` (or `yarn init`)
-* Replace this README with your own
-
-## Consuming components
-
-Your package.json has a `"svelte"` field pointing to `src/index.js`, which allows Svelte apps to import the source code directly, if they are using a bundler plugin like [rollup-plugin-svelte](https://github.com/sveltejs/rollup-plugin-svelte) or [svelte-loader](https://github.com/sveltejs/svelte-loader) (where [`resolve.mainFields`](https://webpack.js.org/configuration/resolve/#resolve-mainfields) in your webpack config includes `"svelte"`). **This is recommended.**
-
-For everyone else, `npm run build` will bundle your component's source code into a plain JavaScript module (`dist/index.mjs`) and a UMD script (`dist/index.js`). This will happen automatically when you publish your component to npm, courtesy of the `prepublishOnly` hook in package.json.
-
-### Based on sveltejs/component-template
-I couldn't find an opinionated components library template to my liking, so I used [sveltejs/component-template](https://github.com/sveltejs/component-template) as base. And then I added minified build configuration using terser plugin + tests + storybook.
-
-### Testing
-Comes with tests out of the box using [svelte-testing-library](https://github.com/testing-library/svelte-testing-library) + [Jest](https://github.com/facebook/jest).
-
-To Run tests:
-```bash
-npm test # or yarn
-```
-
-### Storybook
-To serve development build:
-```bash
-npm run storybook
-```
-
-To build static storybook site (default output folder is /docs for easly sharing on github pages):
-```bash
-npm run build-storybook
+		background-color: pink;"
+/>
 ```

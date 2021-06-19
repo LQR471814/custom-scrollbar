@@ -39,6 +39,10 @@
 		background: "#FFF",
 	}
 
+	//? Directly pass CSS rules for advanced users
+	export let containerStyle = ""
+	export let nubStyle = ""
+
 	//? Props
 	export let position
 	let prevPosition
@@ -146,11 +150,12 @@
 		--hoverTransition: {styling.hoverTransition};
 
 		--nubHeight: {viewable / total * 100}%;
+		{containerStyle}
 	"
 >
 	<div
 		class="nub"
-		style="top: {position / total * 100}%"
+		style="top: {position / total * 100}%; {nubStyle}"
 		draggable="false"
 		bind:this={nub}
 	></div>
