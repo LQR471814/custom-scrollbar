@@ -1,7 +1,7 @@
-<svelte:options tag="js-table-scrollbar" />
+<svelte:options tag="custom-scrollbar" />
 
 <script>
-	import { createEventDispatcher, onMount } from "svelte";
+	import { afterUpdate, createEventDispatcher, onMount } from "svelte";
 
 	function clamp(n, min, max) {
 		if (n < min) {
@@ -25,23 +25,68 @@
 	const dragging = { current: false } //? { current } to make sure values update throughout all the callbacks
 	const yPosition = { current: 0 } //? This is the position of the center of the scroll nub
 
+	//? Replaces each attribute in an obj specified by the
+	//? "keys" array with the value passed to the function
+	//? This is not a pure function
+	function replaceObjKeysWith(obj, keys, val) {
+		for (const attr of keys) {
+			obj[attr] = val
+		}
+	}
+
+	//? Since I couldn't find a built-in for this I made one myself
+	//? This goes through all the keys in the defaults object and checks
+	//? if they exist in the target obj, if they don't or if their value is
+	//? undefined, then it will create / replace that attribute's value with
+	//? the one in the default object
+	function setDefaultsByUndefined(obj, defaults) {
+		const result = {...obj}
+
+		for (const attr of Object.keys(defaults)) {
+			if (result[attr] === undefined) {
+				result[attr] = defaults[attr]
+			}
+		}
+
+		return result
+	}
+
 	//? Styling Options
-	export let styling = {
+
+	//* General Styling
+	export let styling = {}
+	const defaultStyling = {
 		width: '12px',
 		padding: '4px',
 		cssPosition: 'fixed',
-		hoverTransition: '0.1s ease-in-out background-color',
+		hoverTransition: 'none',
+		borderRadius: '10px'
 	}
 
-	export let colorScheme = {
+	let renderedStyling
+	$: {
+		renderedStyling = setDefaultsByUndefined(styling, defaultStyling)
+	}
+
+	//* Color Scheme
+	export let colorScheme = {}
+	const defaultColors = {
+		nubClicked: "#787878",
 		nubHovered: "#A8A8A8",
 		nub: "#C1C1C1",
 		background: "#FFF",
 	}
 
-	//? Directly pass CSS rules for advanced users
+	let renderedColors
+	$: {
+		renderedColors = setDefaultsByUndefined(colorScheme, defaultColors)
+	}
+
+	//* Directly pass CSS rules for advanced users
 	export let containerStyle = ""
+	export let containerHoveredStyle = {}
 	export let nubStyle = ""
+	export let nubHoveredStyle = {}
 
 	//? Props
 	export let position
@@ -103,9 +148,6 @@
 				//? via event
 				position: yPosition.current / (containerHeight),
 			})
-
-			//? Just regularly convert yPosition into a percentage
-			// nub.style.top = `${yPosition.current / containerHeight * 100}%`
 		}
 
 		const onmousedown = (e) => {
@@ -118,6 +160,11 @@
 		}
 
 		const onmouseup = () => {
+			//? Reset Styles
+			replaceObjKeysWith(container.style, Object.keys(containerHoveredStyle), "")
+			replaceObjKeysWith(nub.style, Object.keys(nubHoveredStyle), "")
+			nub.style.backgroundColor = ""
+
 			dragging.current = false
 		}
 
@@ -127,12 +174,30 @@
 			}
 		}
 
+		const ondrag = (e) => e.preventDefault()
+
 		window.addEventListener('mousedown', onmousedown)
 		window.addEventListener('mouseup', onmouseup)
 		window.addEventListener('mousemove', onmousemove)
 
 		//? To prevent dragging and totally breaking the scrollbar
-		window.addEventListener('dragstart', (e) => e.preventDefault())
+		window.addEventListener('dragstart', ondrag)
+
+		return () => {
+			window.removeEventListener('mousedown', onmousedown)
+			window.removeEventListener('mouseup', onmouseup)
+			window.removeEventListener('mousemove', onmousemove)
+			window.removeEventListener('dragstart', ondrag)
+		}
+	})
+
+	afterUpdate(() => {
+		if (dragging.current) {
+			nub.style.backgroundColor = renderedColors.nubClicked
+
+			Object.assign(container.style, containerHoveredStyle)
+			Object.assign(nub.style, nubHoveredStyle)
+		}
 	})
 </script>
 
@@ -140,23 +205,31 @@
 	class="container" bind:this={container}
 	draggable="false"
 	style="
-		--nubColor: {colorScheme.nub};
-		--nubHovered: {colorScheme.nubHovered};
-		--backgroundColor: {colorScheme.background};
+		--nubColor: {renderedColors.nub};
+		--nubHovered: {renderedColors.nubHovered};
+		--backgroundColor: {renderedColors.background};
 
-		--width: {styling.width};
-		--padding: {styling.padding};
-		--position: {styling.cssPosition};
-		--hoverTransition: {styling.hoverTransition};
+		--width: {renderedStyling.width};
+		--padding: {renderedStyling.padding};
+		--position: {renderedStyling.cssPosition};
+		--hoverTransition: {renderedStyling.hoverTransition};
+		--nubBorderRadius: {renderedStyling.borderRadius};
 
 		--nubHeight: {viewable / total * 100}%;
 		{containerStyle}
 	"
+	on:mouseover={ () => Object.assign(container.style, containerHoveredStyle) }
+	on:mouseout={ () => replaceObjKeysWith(container.style, Object.keys(containerHoveredStyle), "") }
 >
 	<div
 		class="nub"
-		style="top: {position / total * 100}%; {nubStyle}"
+		style="
+			top: {position / total * 100}%;
+			{nubStyle}
+		"
 		draggable="false"
+		on:mouseover={ () => Object.assign(nub.style, nubHoveredStyle) }
+		on:mouseout={ () => replaceObjKeysWith(nub.style, Object.keys(nubHoveredStyle), "") }
 		bind:this={nub}
 	></div>
 </div>
@@ -178,7 +251,8 @@
 
 	.nub {
 		width: 100%;
-		border-radius: 10px;
+		border-radius: var(--nubBorderRadius);
+
 		height: var(--nubHeight);
 
 		position: relative;

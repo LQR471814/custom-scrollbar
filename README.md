@@ -44,15 +44,29 @@ You can also style the scrollbar.
 ```html
 <Scrollbar
     styling={{
-        nubHovered: "#000000",
-        nub: "#C1C1C1",
-        background: "FFF",
+        width: "5px",
+        padding: "1px"
+    }}
+
+    colorScheme={{
+        nubHovered: "#000000"
     }}
 
     containerStyle="
         /* Pass CSS rules straight to
             the container or the nub */
 
-        background-color: pink;"
+        background-color: pink;
+        transform: translate(20px, 20px);
+    "
+
+    nubHoveredStyle={{
+        /* Hovered styles also work note that you
+        will need to use a javascript object
+        to pass rules this way */
+
+        backgroundColor: "white",
+        transform: "translate(0px)"
+    }}
 />
 ```
