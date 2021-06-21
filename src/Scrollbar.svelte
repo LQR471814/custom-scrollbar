@@ -1,5 +1,3 @@
-<svelte:options tag="custom-scrollbar" />
-
 <script>
 	import { afterUpdate, createEventDispatcher, onMount } from "svelte";
 
