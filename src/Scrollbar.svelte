@@ -55,6 +55,7 @@
 	export let styling = {}
 	const defaultStyling = {
 		width: '12px',
+		height: '100%',
 		padding: '4px',
 		cssPosition: 'fixed',
 		hoverTransition: 'none',
@@ -208,6 +209,7 @@
 		--backgroundColor: {renderedColors.background};
 
 		--width: {renderedStyling.width};
+		--height: {renderedStyling.height};
 		--padding: {renderedStyling.padding};
 		--position: {renderedStyling.cssPosition};
 		--hoverTransition: {renderedStyling.hoverTransition};
@@ -236,11 +238,7 @@
 	.container {
 		position: var(--position);
 
-		top: 0;
-		right: 0;
-
-		height: calc(100vh - var(--padding) * 2);
-
+		height: calc(var(--height) - 2 * var(--padding));
 		width: var(--width);
 		padding: var(--padding);
 
