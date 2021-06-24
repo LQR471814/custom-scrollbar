@@ -1,4 +1,5 @@
 <script>
+	import addResizeListener from 'add-resize-listener'
 	import { afterUpdate, createEventDispatcher, onMount } from "svelte";
 
 	function clamp(n, min, max) {
@@ -109,9 +110,8 @@
 	export let total
 	export let viewable
 
-	onMount(() => {
+	function updateAll() {
 		containerBox = container.getBoundingClientRect()
-
 		containerLength = (horizontal) ? containerBox.width : containerBox.height
 
 		const computedContainerStyle = window.getComputedStyle(container)
@@ -121,6 +121,12 @@
 		containerContentLength = containerLength -
 							parseFloat(paddingFront) -
 							parseFloat(paddingBack)
+	}
+
+	onMount(() => {
+		const removeResizeListener = addResizeListener(container, () => updateAll())
+
+		updateAll()
 
 		const moveNub = (pos) => {
 			//? Nub's dimensions
@@ -209,6 +215,8 @@
 			window.removeEventListener('mouseup', onmouseup)
 			window.removeEventListener('mousemove', onmousemove)
 			window.removeEventListener('dragstart', ondrag)
+
+			removeResizeListener()
 		}
 	})
 

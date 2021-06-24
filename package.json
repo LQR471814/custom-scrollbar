@@ -1,6 +1,6 @@
 {
   "name": "svelte-custom-scrollbar",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "svelte": "src/index.js",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -24,5 +24,7 @@
     "src",
     "dist"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "add-resize-listener": "^2.0.1"
+  }
 }
