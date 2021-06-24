@@ -16,12 +16,13 @@
 	let nub
 
 	let containerBox
-	let containerHeight //? Content height (Bounding Client Height minus padding)
+	let containerContentLength //? Content length (Bounding Client Height / Width minus padding)
+	let containerLength //? Actual length (Bounding Client Height / Width based on horizontal prop)
 
 	const dispatch = createEventDispatcher()
 
 	const dragging = { current: false } //? { current } to make sure values update throughout all the callbacks
-	const yPosition = { current: 0 } //? This is the position of the center of the scroll nub
+	const internalPosition = { current: 0 } //? This is the position of the center of the scroll nub
 
 	//? Replaces each attribute in an obj specified by the
 	//? "keys" array with the value passed to the function
@@ -51,10 +52,13 @@
 
 	//? Styling Options
 
+	//* Whether or not the Scrollbar should be horizontal
+	export let horizontal = false
+
 	//* General Styling
 	export let styling = {}
 	const defaultStyling = {
-		width: '12px',
+		width: '18px',
 		height: '100%',
 		padding: '4px',
 		cssPosition: 'relative',
@@ -96,8 +100,8 @@
 	let prevPosition
 
 	$: {
-		if (position !== prevPosition && containerBox) {
-			yPosition.current = (position / total) * containerBox.height
+		if (position !== prevPosition && containerLength) {
+			internalPosition.current = (position / total) * containerLength
 			prevPosition = position
 		}
 	}
@@ -108,57 +112,71 @@
 	onMount(() => {
 		containerBox = container.getBoundingClientRect()
 
-		containerHeight = containerBox.height -
-							parseFloat(window.getComputedStyle(container).paddingTop) -
-							parseFloat(window.getComputedStyle(container).paddingBottom)
+		containerLength = (horizontal) ? containerBox.width : containerBox.height
 
-		const moveNub = (y) => {
+		const computedContainerStyle = window.getComputedStyle(container)
+		const paddingFront = (horizontal) ? computedContainerStyle.paddingLeft : computedContainerStyle.paddingTop
+		const paddingBack = (horizontal) ? computedContainerStyle.paddingRight : computedContainerStyle.paddingBottom
+
+		containerContentLength = containerLength -
+							parseFloat(paddingFront) -
+							parseFloat(paddingBack)
+
+		const moveNub = (pos) => {
 			//? Nub's dimensions
 			const nubBox = nub.getBoundingClientRect()
 
+			const nubLength = (horizontal) ? nubBox.width : nubBox.height
+			const nubTop = (horizontal) ? nubBox.left : nubBox.top
+
 			//? Center of the nub
-			const centerY = Math.round(nubBox.height / 2) + nubBox.top
+			const center = Math.round(nubLength / 2) + nubTop
 
 			//? How far to move to align the center of the nub to the cursor
 			//? Because it makes most sense for the center of the nub to be
 			//? aligned to your cursor instead of the top
-			const deltaY = y - centerY
+			const delta = pos - center
 
-			//? yPosition represents how far the nub moved measured
+			//? internalPosition represents how far the nub moved measured
 			//? (from it's top to the top of the containertop)
-			yPosition.current += deltaY
+			internalPosition.current += delta
 
-			//? Limit yPosition between 0 and the bottom of the container minus
-			//? the nub's height because yPosition represents the position
+			//? Limit internalPosition between 0 and the bottom of the container minus
+			//? the nub's height because internalPosition represents the position
 			//? at the top of the nub (otherwise the nub will only be stopped when
 			//? its top touches the bottom)
-			yPosition.current = clamp(
-				yPosition.current, 0,
-				containerHeight - nubBox.height
+			internalPosition.current = clamp(
+				internalPosition.current, 0,
+				containerContentLength - nubLength
 			)
 
 			dispatch('scroll', {
 				//? Calculate the percentage scrolled but subtract the nub's height
-				//? this is because we clamped the yPosition, which is the position
+				//? this is because we clamped the internalPosition, which is the position
 				//? of the top of the nub to the total height minus the nub's height
 
 				//? Without subtracting it here as well the percentage will end up
 				//? being innacurate because it does not match up with the clamped range
-				truePosition: yPosition.current / (containerHeight - nubBox.height),
+				truePosition: internalPosition.current / (containerContentLength - nubLength),
 
 				//? Here "false" position is still included because the someone using
 				//? will probably want to keep a state of the scrollbar that is updated
 				//? via event
-				position: yPosition.current / (containerHeight),
+				position: internalPosition.current / (containerContentLength),
 			})
 		}
 
 		const onmousedown = (e) => {
-			if (!(e.x < containerBox.right && e.x > containerBox.left)) {
+			const boundingMax = (horizontal) ? containerBox.bottom : containerBox.right
+			const boundingMin = (horizontal) ? containerBox.top : containerBox.left
+
+			const mouseMeasure = (horizontal) ? e.y : e.x
+
+			if (!(mouseMeasure < boundingMax && mouseMeasure > boundingMin)) {
 				return
 			}
 
-			moveNub(e.y)
+			moveNub((horizontal) ? e.x : e.y)
 			dragging.current = true
 		}
 
@@ -173,7 +191,7 @@
 
 		const onmousemove = (e) => {
 			if (dragging.current) {
-				moveNub(e.y)
+				moveNub((horizontal) ? e.x : e.y)
 			}
 		}
 
@@ -212,8 +230,9 @@
 		--nubHovered: {renderedColors.nubHovered};
 		--backgroundColor: {renderedColors.background};
 
-		--width: {renderedStyling.width};
-		--height: {renderedStyling.height};
+		/* Swap width and height if horizontal */
+		--width: {(horizontal) ? renderedStyling.height : renderedStyling.width};
+		--height: {(horizontal) ? renderedStyling.width : renderedStyling.height};
 		--padding: {renderedStyling.padding};
 
 		position: {renderedStyling.cssPosition};
@@ -224,8 +243,6 @@
 
 		--hoverTransition: {renderedStyling.hoverTransition};
 		--nubBorderRadius: {renderedStyling.borderRadius};
-
-		--nubHeight: {viewable / total * 100}%;
 		{containerStyle}
 	"
 	on:mouseover={ () => Object.assign(container.style, containerHoveredStyle) }
@@ -234,7 +251,8 @@
 	<div
 		class="nub"
 		style="
-			top: {position / total * 100}%;
+			{`${(horizontal) ? 'width' : 'height'}: ${viewable / total * 100}%;`}
+			{`${(horizontal) ? 'left' : 'top'}: ${position / total * 100}%;`}
 			{nubStyle}
 		"
 		draggable="false"
@@ -246,9 +264,9 @@
 
 <style>
 	.container {
-		position: var(--position);
+		box-sizing: border-box;
 
-		height: calc(var(--height) - 2 * var(--padding));
+		height: var(--height);
 		width: var(--width);
 		padding: var(--padding);
 
@@ -257,9 +275,9 @@
 
 	.nub {
 		width: 100%;
-		border-radius: var(--nubBorderRadius);
+		height: 100%;
 
-		height: var(--nubHeight);
+		border-radius: var(--nubBorderRadius);
 
 		position: relative;
 		top: 0;
