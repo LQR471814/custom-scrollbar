@@ -57,8 +57,12 @@
 		width: '12px',
 		height: '100%',
 		padding: '4px',
-		cssPosition: 'fixed',
-		hoverTransition: 'none',
+		cssPosition: 'relative',
+		top: 'unset',
+		right: 'unset',
+		left: 'unset',
+		bottom: 'unset',
+		hoverTransition: 'unset',
 		borderRadius: '10px'
 	}
 
@@ -211,7 +215,13 @@
 		--width: {renderedStyling.width};
 		--height: {renderedStyling.height};
 		--padding: {renderedStyling.padding};
-		--position: {renderedStyling.cssPosition};
+
+		position: {renderedStyling.cssPosition};
+		top: {renderedStyling.top};
+		right: {renderedStyling.right};
+		left: {renderedStyling.left};
+		bottom: {renderedStyling.bottom};
+
 		--hoverTransition: {renderedStyling.hoverTransition};
 		--nubBorderRadius: {renderedStyling.borderRadius};
 
