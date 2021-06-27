@@ -1,5 +1,5 @@
 <script>
-	import addResizeListener from 'add-resize-listener'
+	import { addResizeListener } from 'add-resize-listener'
 	import { afterUpdate, createEventDispatcher, onMount } from "svelte";
 
 	function clamp(n, min, max) {
@@ -173,12 +173,20 @@
 		}
 
 		const onmousedown = (e) => {
-			const boundingMax = (horizontal) ? containerBox.bottom : containerBox.right
-			const boundingMin = (horizontal) ? containerBox.top : containerBox.left
+			const containerBoundMin1 = (horizontal) ? containerBox.top : containerBox.left
+			const containerBoundMax1 = (horizontal) ? containerBox.bottom : containerBox.right
 
-			const mouseMeasure = (horizontal) ? e.y : e.x
+			const containerBoundMin2 = (horizontal) ? containerBox.left : containerBox.top
+			const containerBoundMax2 = (horizontal) ? containerBox.right : containerBox.bottom
 
-			if (!(mouseMeasure < boundingMax && mouseMeasure > boundingMin)) {
+			const mouseMeasure1 = (horizontal) ? e.y : e.x
+			const mouseMeasure2 = (horizontal) ? e.x : e.y
+
+			//? Make sure cursor is within x and y bounds of scroll container
+			if (
+				!(mouseMeasure2 < containerBoundMax2 && mouseMeasure2 > containerBoundMin2) ||
+				!(mouseMeasure1 < containerBoundMax1 && mouseMeasure1 > containerBoundMin1)
+			) {
 				return
 			}
 
