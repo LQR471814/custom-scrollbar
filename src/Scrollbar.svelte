@@ -1,5 +1,5 @@
 <script>
-	import { addResizeListener } from 'add-resize-listener'
+	import addResizeListener from 'add-resize-listener'
 	import { afterUpdate, createEventDispatcher, onMount } from "svelte";
 
 	function clamp(n, min, max) {
